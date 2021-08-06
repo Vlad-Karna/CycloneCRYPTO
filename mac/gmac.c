@@ -323,6 +323,8 @@ error_t gmacReset(GmacContext *context, const uint8_t *iv, size_t ivLen)
    osMemset(context->buffer, 0, context->cipher->blockSize);
    //Number of bytes in the buffer
    context->bufferLength = 0;
+   // Total Number of bytes
+   context->totalLength = 0;
 
    //Successful processing
    return NO_ERROR;
