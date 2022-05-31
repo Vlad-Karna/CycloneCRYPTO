@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _ECDH_H
@@ -34,6 +34,16 @@
 //Dependencies
 #include "core/crypto.h"
 #include "ecc/ec.h"
+
+//X25519 supported?
+#if (X25519_SUPPORT == ENABLED)
+   #include "ecc/x25519.h"
+#endif
+
+//X448 supported?
+#if (X448_SUPPORT == ENABLED)
+   #include "ecc/x448.h"
+#endif
 
 //C++ guard
 #ifdef __cplusplus
@@ -47,10 +57,10 @@ extern "C" {
 
 typedef struct
 {
-   EcDomainParameters params; //EC domain parameters
-   Mpi da;                    ///<One's own private key
-   EcPoint qa;                ///<One's own public key
-   EcPoint qb;                ///<Peer's public key
+   EcDomainParameters params; ///<EC domain parameters
+   EcPrivateKey da;           ///<One's own EC private key
+   EcPublicKey qa;            ///<One's own EC public key
+   EcPublicKey qb;            ///<Peer's EC public key
 } EcdhContext;
 
 
@@ -58,8 +68,8 @@ typedef struct
 void ecdhInit(EcdhContext *context);
 void ecdhFree(EcdhContext *context);
 
-error_t ecdhGenerateKeyPair(EcdhContext *context,
-   const PrngAlgo *prngAlgo, void *prngContext);
+error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
+   void *prngContext);
 
 error_t ecdhCheckPublicKey(const EcDomainParameters *params, EcPoint *publicKey);
 

@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _RSA_H
@@ -33,6 +33,7 @@
 
 //Dependencies
 #include "core/crypto.h"
+#include "hash/hash_algorithms.h"
 #include "mpi/mpi.h"
 
 //C++ guard
@@ -58,14 +59,15 @@ typedef struct
 
 typedef struct
 {
-   Mpi n;    ///<Modulus
-   Mpi e;    ///<Public exponent
-   Mpi d;    ///<Private exponent
-   Mpi p;    ///<First factor
-   Mpi q;    ///<Second factor
-   Mpi dp;   ///<First factor's CRT exponent
-   Mpi dq;   ///<second factor's CRT exponent
-   Mpi qinv; ///<CRT coefficient
+   Mpi n;      ///<Modulus
+   Mpi e;      ///<Public exponent
+   Mpi d;      ///<Private exponent
+   Mpi p;      ///<First factor
+   Mpi q;      ///<Second factor
+   Mpi dp;     ///<First factor's CRT exponent
+   Mpi dq;     ///<Second factor's CRT exponent
+   Mpi qinv;   ///<CRT coefficient
+   int_t slot; ///<Private key slot
 } RsaPrivateKey;
 
 

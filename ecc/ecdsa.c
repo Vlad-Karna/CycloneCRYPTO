@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -59,113 +59,6 @@ const uint8_t ECDSA_WITH_SHA3_256_OID[9] = {0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 
 const uint8_t ECDSA_WITH_SHA3_384_OID[9] = {0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x0B};
 //ECDSA with SHA-3-512 OID (2.16.840.1.101.3.4.3.12)
 const uint8_t ECDSA_WITH_SHA3_512_OID[9] = {0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x03, 0x0C};
-
-
-/**
- * @brief ECDSA key pair generation
- * @param[in] prngAlgo PRNG algorithm
- * @param[in] prngContext Pointer to the PRNG context
- * @param[in] params EC domain parameters
- * @param[out] privateKey EC private key
- * @param[out] publicKey EC public key
- * @return Error code
- **/
-
-error_t ecdsaGenerateKeyPair(const PrngAlgo *prngAlgo, void *prngContext,
-   const EcDomainParameters *params, Mpi *privateKey, EcPoint *publicKey)
-{
-   error_t error;
-
-   //Generate a private key
-   error = ecdsaGeneratePrivateKey(prngAlgo, prngContext, params, privateKey);
-
-   //Check status code
-   if(!error)
-   {
-      //Derive the public key from the private key
-      error = ecdsaGeneratePublicKey(params, privateKey, publicKey);
-   }
-
-   //Return status code
-   return error;
-}
-
-
-/**
- * @brief ECDSA private key generation
- * @param[in] prngAlgo PRNG algorithm
- * @param[in] prngContext Pointer to the PRNG context
- * @param[in] params EC domain parameters
- * @param[out] privateKey EC private key
- * @return Error code
- **/
-
-error_t ecdsaGeneratePrivateKey(const PrngAlgo *prngAlgo, void *prngContext,
-   const EcDomainParameters *params, Mpi *privateKey)
-{
-   error_t error;
-   uint_t n;
-
-   //Check parameters
-   if(prngAlgo == NULL || prngContext == NULL || params == NULL ||
-      privateKey == NULL)
-   {
-      return ERROR_INVALID_PARAMETER;
-   }
-
-   //Let N be the bit length of q
-   n = mpiGetBitLength(&params->q);
-
-   //Generated a pseudorandom number
-   MPI_CHECK(mpiRand(privateKey, n, prngAlgo, prngContext));
-
-   //Make sure that 0 < d < q
-   if(mpiComp(privateKey, &params->q) >= 0)
-   {
-      EC_CHECK(mpiShiftRight(privateKey, 1));
-   }
-
-   //Debug message
-   TRACE_DEBUG("  Private key:\r\n");
-   TRACE_DEBUG_MPI("    ", privateKey);
-
-end:
-   //Return status code
-   return error;
-}
-
-
-/**
- * @brief Derive the public key from an ECDSA private key
- * @param[in] params EC domain parameters
- * @param[in] privateKey EC private key
- * @param[out] publicKey EC public key
- * @return Error code
- **/
-
-error_t ecdsaGeneratePublicKey(const EcDomainParameters *params,
-   const Mpi *privateKey, EcPoint *publicKey)
-{
-   error_t error;
-
-   //Check parameters
-   if(params == NULL || privateKey == NULL || publicKey == NULL)
-      return ERROR_INVALID_PARAMETER;
-
-   //Compute Q = d.G
-   EC_CHECK(ecMult(params, publicKey, privateKey, &params->g));
-   EC_CHECK(ecAffinify(params, publicKey, publicKey));
-
-   //Debug message
-   TRACE_DEBUG("  Public key X:\r\n");
-   TRACE_DEBUG_MPI("    ", &publicKey->x);
-   TRACE_DEBUG("  Public key Y:\r\n");
-   TRACE_DEBUG_MPI("    ", &publicKey->y);
-
-end:
-   //Return status code
-   return error;
-}
 
 
 /**
@@ -496,8 +389,8 @@ error_t ecdsaReadSignature(const uint8_t *data, size_t length,
  * @return Error code
  **/
 
-__weak error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo,
-   void *prngContext, const EcDomainParameters *params, const Mpi *privateKey,
+__weak_func error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo, void *prngContext,
+   const EcDomainParameters *params, const EcPrivateKey *privateKey,
    const uint8_t *digest, size_t digestLen, EcdsaSignature *signature)
 {
    error_t error;
@@ -513,7 +406,7 @@ __weak error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo,
    //Debug message
    TRACE_DEBUG("ECDSA signature generation...\r\n");
    TRACE_DEBUG("  private key:\r\n");
-   TRACE_DEBUG_MPI("    ", privateKey);
+   TRACE_DEBUG_MPI("    ", &privateKey->d);
    TRACE_DEBUG("  digest:\r\n");
    TRACE_DEBUG_ARRAY("    ", digest, digestLen);
 
@@ -523,20 +416,15 @@ __weak error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo,
    //Initialize EC point
    ecInit(&r1);
 
-   //Let N be the bit length of q
-   n = mpiGetBitLength(&params->q);
-
-   //Generated a pseudorandom number
-   MPI_CHECK(mpiRand(&k, n, prngAlgo, prngContext));
-
-   //Make sure that 0 < k < q
-   if(mpiComp(&k, &params->q) >= 0)
-      mpiShiftRight(&k, 1);
+   //Generate a random number k such as 0 < k < q - 1
+   MPI_CHECK(mpiRandRange(&k, &params->q, prngAlgo, prngContext));
 
    //Debug message
    TRACE_DEBUG("  k:\r\n");
    TRACE_DEBUG_MPI("    ", &k);
 
+   //Let N be the bit length of q
+   n = mpiGetBitLength(&params->q);
    //Compute N = MIN(N, outlen)
    n = MIN(n, digestLen * 8);
 
@@ -570,7 +458,7 @@ __weak error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo,
    MPI_CHECK(mpiInvMod(&k, &k, &params->q));
 
    //Compute s = k ^ -1 * (z + x * r) mod q
-   MPI_CHECK(mpiMul(&signature->s, privateKey, &signature->r));
+   MPI_CHECK(mpiMul(&signature->s, &privateKey->d, &signature->r));
    MPI_CHECK(mpiAdd(&signature->s, &signature->s, &z));
    MPI_CHECK(mpiMod(&signature->s, &signature->s, &params->q));
    MPI_CHECK(mpiMulMod(&signature->s, &signature->s, &k, &params->q));
@@ -611,8 +499,8 @@ end:
  * @return Error code
  **/
 
-__weak error_t ecdsaVerifySignature(const EcDomainParameters *params,
-   const EcPoint *publicKey, const uint8_t *digest, size_t digestLen,
+__weak_func error_t ecdsaVerifySignature(const EcDomainParameters *params,
+   const EcPublicKey *publicKey, const uint8_t *digest, size_t digestLen,
    const EcdsaSignature *signature)
 {
    error_t error;
@@ -632,9 +520,9 @@ __weak error_t ecdsaVerifySignature(const EcDomainParameters *params,
    //Debug message
    TRACE_DEBUG("ECDSA signature verification...\r\n");
    TRACE_DEBUG("  public key X:\r\n");
-   TRACE_DEBUG_MPI("    ", &publicKey->x);
+   TRACE_DEBUG_MPI("    ", &publicKey->q.x);
    TRACE_DEBUG("  public key Y:\r\n");
-   TRACE_DEBUG_MPI("    ", &publicKey->y);
+   TRACE_DEBUG_MPI("    ", &publicKey->q.y);
    TRACE_DEBUG("  digest:\r\n");
    TRACE_DEBUG_ARRAY("    ", digest, digestLen);
    TRACE_DEBUG("  r:\r\n");
@@ -643,14 +531,16 @@ __weak error_t ecdsaVerifySignature(const EcDomainParameters *params,
    TRACE_DEBUG_MPI("    ", &signature->s);
 
    //The verifier shall check that 0 < r < q
-   if(mpiCompInt(&signature->r, 0) <= 0 || mpiComp(&signature->r, &params->q) >= 0)
+   if(mpiCompInt(&signature->r, 0) <= 0 ||
+      mpiComp(&signature->r, &params->q) >= 0)
    {
       //If the condition is violated, the signature shall be rejected as invalid
       return ERROR_INVALID_SIGNATURE;
    }
 
    //The verifier shall check that 0 < s < q
-   if(mpiCompInt(&signature->s, 0) <= 0 || mpiComp(&signature->s, &params->q) >= 0)
+   if(mpiCompInt(&signature->s, 0) <= 0 ||
+      mpiComp(&signature->s, &params->q) >= 0)
    {
       //If the condition is violated, the signature shall be rejected as invalid
       return ERROR_INVALID_SIGNATURE;
@@ -688,7 +578,7 @@ __weak error_t ecdsaVerifySignature(const EcDomainParameters *params,
    MPI_CHECK(mpiMulMod(&u2, &signature->r, &w, &params->q));
 
    //Compute V0 = (x0, y0) = u1.G + u2.Q
-   EC_CHECK(ecProjectify(params, &v1, publicKey));
+   EC_CHECK(ecProjectify(params, &v1, &publicKey->q));
    EC_CHECK(ecTwinMult(params, &v0, &u1, &params->g, &u2, &v1));
    EC_CHECK(ecAffinify(params, &v0, &v0));
 

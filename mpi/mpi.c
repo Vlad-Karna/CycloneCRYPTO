@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -506,12 +506,56 @@ error_t mpiRand(Mpi *r, uint_t length, const PrngAlgo *prngAlgo,
 
 
 /**
+ * @brief Generate a random value in the range 1 to p-1
+ * @param[out] r Pointer to a multiple precision integer
+ * @param[in] p The upper bound of the range
+ * @param[in] prngAlgo PRNG algorithm
+ * @param[in] prngContext Pointer to the PRNG context
+ * @return Error code
+ **/
+
+error_t mpiRandRange(Mpi *r, const Mpi *p, const PrngAlgo *prngAlgo,
+   void *prngContext)
+{
+   error_t error;
+   uint_t n;
+   Mpi a;
+
+   //Make sure p is greater than 1
+   if(mpiCompInt(p, 1) <= 0)
+      return ERROR_INVALID_PARAMETER;
+
+   //Initialize multiple precision integer
+   mpiInit(&a);
+
+   //Get the actual length of p
+   n = mpiGetBitLength(p);
+
+   //Generate extra random bits so that the bias produced by the modular
+   //reduction is negligible
+   MPI_CHECK(mpiRand(r, n + 64, prngAlgo, prngContext));
+
+   //Compute r = (r mod (p - 1)) + 1
+   MPI_CHECK(mpiSubInt(&a, p, 1));
+   MPI_CHECK(mpiMod(r, r, &a));
+   MPI_CHECK(mpiAddInt(r, r, 1));
+
+end:
+   //Release previously allocated memory
+   mpiFree(&a);
+
+   //Return status code
+   return error;
+}
+
+
+/**
  * @brief Test whether a number is probable prime
  * @param[in] a Pointer to a multiple precision integer
  * @return Error code
  **/
 
-__weak error_t mpiCheckProbablePrime(const Mpi *a)
+__weak_func error_t mpiCheckProbablePrime(const Mpi *a)
 {
    //The algorithm is implemented by hardware
    return ERROR_NOT_IMPLEMENTED;
@@ -1129,7 +1173,7 @@ error_t mpiShiftRight(Mpi *r, uint_t n)
  * @return Error code
  **/
 
-__weak error_t mpiMul(Mpi *r, const Mpi *a, const Mpi *b)
+__weak_func error_t mpiMul(Mpi *r, const Mpi *a, const Mpi *b)
 {
    error_t error;
    int_t i;
@@ -1433,7 +1477,7 @@ end:
  * @return Error code
  **/
 
-error_t mpiMulMod(Mpi *r, const Mpi *a, const Mpi *b, const Mpi *p)
+__weak_func error_t mpiMulMod(Mpi *r, const Mpi *a, const Mpi *b, const Mpi *p)
 {
    error_t error;
 
@@ -1455,7 +1499,7 @@ end:
  * @return Error code
  **/
 
-__weak error_t mpiInvMod(Mpi *r, const Mpi *a, const Mpi *p)
+__weak_func error_t mpiInvMod(Mpi *r, const Mpi *a, const Mpi *p)
 {
    error_t error;
    Mpi b;
@@ -1531,7 +1575,7 @@ end:
  * @return Error code
  **/
 
-__weak error_t mpiExpMod(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p)
+__weak_func error_t mpiExpMod(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p)
 {
    error_t error;
    int_t i;
@@ -1709,6 +1753,38 @@ end:
 
    //Return status code
    return error;
+}
+
+
+/**
+ * @brief Modular exponentiation (fast calculation)
+ * @param[out] r Resulting integer R = A ^ E mod P
+ * @param[in] a Pointer to a multiple precision integer
+ * @param[in] e Exponent
+ * @param[in] p Modulus
+ * @return Error code
+ **/
+
+__weak_func error_t mpiExpModFast(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p)
+{
+   //Perform modular exponentiation
+   return mpiExpMod(r, a, e, p);
+}
+
+
+/**
+ * @brief Modular exponentiation (regular calculation)
+ * @param[out] r Resulting integer R = A ^ E mod P
+ * @param[in] a Pointer to a multiple precision integer
+ * @param[in] e Exponent
+ * @param[in] p Modulus
+ * @return Error code
+ **/
+
+__weak_func error_t mpiExpModRegular(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p)
+{
+   //Perform modular exponentiation
+   return mpiExpMod(r, a, e, p);
 }
 
 

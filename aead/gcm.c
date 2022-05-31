@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -31,7 +31,7 @@
  * Refer to SP 800-38D for more details
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -75,7 +75,7 @@ static const uint32_t red[16] =
  * @return Error code
  **/
 
-error_t gcmInit(GcmContext *context, const CipherAlgo *cipherAlgo,
+__weak_func error_t gcmInit(GcmContext *context, const CipherAlgo *cipherAlgo,
    void *cipherContext)
 {
    uint_t i;
@@ -98,8 +98,8 @@ error_t gcmInit(GcmContext *context, const CipherAlgo *cipherAlgo,
    h[3] = 0;
 
    //Generate the hash subkey H
-   context->cipherAlgo->encryptBlock(context->cipherContext,
-      (uint8_t *) h, (uint8_t *) h);
+   context->cipherAlgo->encryptBlock(context->cipherContext, (uint8_t *) h,
+      (uint8_t *) h);
 
    //Pre-compute M(0) = H * 0
    j = reverseInt4(0);
@@ -187,7 +187,7 @@ error_t gcmInit(GcmContext *context, const CipherAlgo *cipherAlgo,
  * @return Error code
  **/
 
-error_t gcmEncrypt(GcmContext *context, const uint8_t *iv,
+__weak_func error_t gcmEncrypt(GcmContext *context, const uint8_t *iv,
    size_t ivLen, const uint8_t *a, size_t aLen, const uint8_t *p,
    uint8_t *c, size_t length, uint8_t *t, size_t tLen)
 {
@@ -334,7 +334,7 @@ error_t gcmEncrypt(GcmContext *context, const uint8_t *iv,
  * @return Error code
  **/
 
-error_t gcmDecrypt(GcmContext *context, const uint8_t *iv,
+__weak_func error_t gcmDecrypt(GcmContext *context, const uint8_t *iv,
    size_t ivLen, const uint8_t *a, size_t aLen, const uint8_t *c,
    uint8_t *p, size_t length, const uint8_t *t, size_t tLen)
 {
@@ -481,7 +481,7 @@ error_t gcmDecrypt(GcmContext *context, const uint8_t *iv,
  * @param[in, out] x 16-byte block to be multiplied by H
  **/
 
-void gcmMul(GcmContext *context, uint8_t *x)
+__weak_func void gcmMul(GcmContext *context, uint8_t *x)
 {
    int_t i;
    uint8_t b;
@@ -569,18 +569,18 @@ void gcmXorBlock(uint8_t *x, const uint8_t *a, const uint8_t *b, size_t n)
 
 void gcmIncCounter(uint8_t *x)
 {
-   size_t i;
+   uint16_t temp;
 
    //The function increments the right-most 32 bits of the block. The remaining
    //left-most 96 bits remain unchanged
-   for(i = 0; i < 4; i++)
-   {
-      //Increment the current byte and propagate the carry if necessary
-      if(++(x[15 - i]) != 0)
-      {
-         break;
-      }
-   }
+   temp = x[15] + 1;
+   x[15] = temp & 0xFF;
+   temp = (temp >> 8) + x[14];
+   x[14] = temp & 0xFF;
+   temp = (temp >> 8) + x[13];
+   x[13] = temp & 0xFF;
+   temp = (temp >> 8) + x[12];
+   x[12] = temp & 0xFF;
 }
 
 #endif

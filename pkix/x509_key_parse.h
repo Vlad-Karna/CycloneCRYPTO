@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _X509_KEY_PARSE_H
@@ -84,7 +84,7 @@ error_t x509ImportDsaPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
    DsaPublicKey *publicKey);
 
 error_t x509ImportEcPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
-   EcPoint *publicKey);
+   EcPublicKey *publicKey);
 
 error_t x509ImportEcParameters(const X509EcParameters *ecParams,
    EcDomainParameters *params);

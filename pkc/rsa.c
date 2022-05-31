@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -33,7 +33,7 @@
  * - RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -139,6 +139,9 @@ void rsaInitPrivateKey(RsaPrivateKey *key)
    mpiInit(&key->dp);
    mpiInit(&key->dq);
    mpiInit(&key->qinv);
+
+   //Initialize private key slot
+   key->slot = -1;
 }
 
 
@@ -1151,7 +1154,7 @@ error_t rsassaPssVerify(const RsaPublicKey *key, const HashAlgo *hash,
  * @return Error code
  **/
 
-error_t rsaep(const RsaPublicKey *key, const Mpi *m, Mpi *c)
+__weak_func error_t rsaep(const RsaPublicKey *key, const Mpi *m, Mpi *c)
 {
    //Ensure the RSA public key is valid
    if(!key->n.size || !key->e.size)
@@ -1162,7 +1165,7 @@ error_t rsaep(const RsaPublicKey *key, const Mpi *m, Mpi *c)
       return ERROR_OUT_OF_RANGE;
 
    //Perform modular exponentiation (c = m ^ e mod n)
-   return mpiExpMod(c, m, &key->e, &key->n);
+   return mpiExpModFast(c, m, &key->e, &key->n);
 }
 
 
@@ -1178,7 +1181,7 @@ error_t rsaep(const RsaPublicKey *key, const Mpi *m, Mpi *c)
  * @return Error code
  **/
 
-__weak error_t rsadp(const RsaPrivateKey *key, const Mpi *c, Mpi *m)
+__weak_func error_t rsadp(const RsaPrivateKey *key, const Mpi *c, Mpi *m)
 {
    error_t error;
    Mpi m1;
@@ -1195,13 +1198,14 @@ __weak error_t rsadp(const RsaPrivateKey *key, const Mpi *c, Mpi *m)
    mpiInit(&h);
 
    //Use the Chinese remainder algorithm?
-   if(key->n.size && key->p.size && key->q.size &&
-      key->dp.size && key->dq.size && key->qinv.size)
+   if(mpiGetLength(&key->n) > 0 && mpiGetLength(&key->p) > 0 &&
+      mpiGetLength(&key->q) > 0 && mpiGetLength(&key->dp) > 0 &&
+      mpiGetLength(&key->dq) > 0 && mpiGetLength(&key->qinv) > 0)
    {
       //Compute m1 = c ^ dP mod p
-      MPI_CHECK(mpiExpMod(&m1, c, &key->dp, &key->p));
+      MPI_CHECK(mpiExpModRegular(&m1, c, &key->dp, &key->p));
       //Compute m2 = c ^ dQ mod q
-      MPI_CHECK(mpiExpMod(&m2, c, &key->dq, &key->q));
+      MPI_CHECK(mpiExpModRegular(&m2, c, &key->dq, &key->q));
       //Let h = (m1 - m2) * qInv mod p
       MPI_CHECK(mpiSub(&h, &m1, &m2));
       MPI_CHECK(mpiMulMod(&h, &h, &key->qinv, &key->p));
@@ -1210,10 +1214,10 @@ __weak error_t rsadp(const RsaPrivateKey *key, const Mpi *c, Mpi *m)
       MPI_CHECK(mpiAdd(m, m, &m2));
    }
    //Use modular exponentiation?
-   else if(key->n.size && key->d.size)
+   else if(mpiGetLength(&key->n) > 0 && mpiGetLength(&key->d) > 0)
    {
       //Let m = c ^ d mod n
-      error = mpiExpMod(m, c, &key->d, &key->n);
+      error = mpiExpModRegular(m, c, &key->d, &key->n);
    }
    //Invalid parameters?
    else
@@ -1698,7 +1702,7 @@ error_t emsaPkcs1v15Verify(const HashAlgo *hash, const uint8_t *digest,
    bad |= em[i++] ^ (uint8_t) ASN1_TYPE_OCTET_STRING;
    bad |= em[i++] ^ (uint8_t) hash->digestSize;
 
-   //Recover the underlying hash value, and then compare it to a newly
+   //Recover the underlying hash value, and then compare it to the newly
    //computed hash value
    for(j = 0; j < hash->digestSize; j++)
    {
@@ -1978,7 +1982,7 @@ error_t rsaGenerateKeyPair(const PrngAlgo *prngAlgo, void *prngContext,
  * @return Error code
  **/
 
-error_t rsaGeneratePrivateKey(const PrngAlgo *prngAlgo, void *prngContext,
+__weak_func error_t rsaGeneratePrivateKey(const PrngAlgo *prngAlgo, void *prngContext,
    size_t k, uint_t e, RsaPrivateKey *privateKey)
 {
    error_t error;

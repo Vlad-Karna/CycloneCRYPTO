@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _ECDSA_H
@@ -64,15 +64,6 @@ extern const uint8_t ECDSA_WITH_SHA3_384_OID[9];
 extern const uint8_t ECDSA_WITH_SHA3_512_OID[9];
 
 //ECDSA related functions
-error_t ecdsaGenerateKeyPair(const PrngAlgo *prngAlgo, void *prngContext,
-   const EcDomainParameters *params, Mpi *privateKey, EcPoint *publicKey);
-
-error_t ecdsaGeneratePrivateKey(const PrngAlgo *prngAlgo, void *prngContext,
-   const EcDomainParameters *params, Mpi *privateKey);
-
-error_t ecdsaGeneratePublicKey(const EcDomainParameters *params,
-   const Mpi *privateKey, EcPoint *publicKey);
-
 void ecdsaInitSignature(EcdsaSignature *signature);
 void ecdsaFreeSignature(EcdsaSignature *signature);
 
@@ -83,11 +74,11 @@ error_t ecdsaReadSignature(const uint8_t *data, size_t length,
    EcdsaSignature *signature);
 
 error_t ecdsaGenerateSignature(const PrngAlgo *prngAlgo, void *prngContext,
-   const EcDomainParameters *params, const Mpi *privateKey,
+   const EcDomainParameters *params, const EcPrivateKey *privateKey,
    const uint8_t *digest, size_t digestLen, EcdsaSignature *signature);
 
 error_t ecdsaVerifySignature(const EcDomainParameters *params,
-   const EcPoint *publicKey, const uint8_t *digest, size_t digestLen,
+   const EcPublicKey *publicKey, const uint8_t *digest, size_t digestLen,
    const EcdsaSignature *signature);
 
 //C++ guard

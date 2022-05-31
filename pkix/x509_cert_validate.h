@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _X509_CERT_VALIDATE_H
@@ -58,11 +58,6 @@ bool_t x509CompareSubjectName(const char_t *subjectName,
 
 bool_t x509CompareSubtree(const char_t *subjectName,
    const char_t *subtree, size_t subtreeLen);
-
-error_t x509VerifySignature(const uint8_t *tbsCert, size_t tbsCertLen,
-   const X509SignatureAlgoId *signatureAlgoId,
-   const X509SubjectPublicKeyInfo *publicKeyInfo,
-   const X509SignatureValue *signatureValue);
 
 //C++ guard
 #ifdef __cplusplus

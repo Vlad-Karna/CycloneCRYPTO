@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -34,10 +34,6 @@
 //Dependencies
 #include "core/crypto.h"
 #include "ecc/ec.h"
-#include "ecc/curve25519.h"
-#include "ecc/curve448.h"
-#include "ecc/ed25519.h"
-#include "ecc/ed448.h"
 #include "debug.h"
 
 //Check crypto library configuration
@@ -49,12 +45,13 @@ const uint8_t EC_PUBLIC_KEY_OID[7] = {0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01};
 
 /**
  * @brief Initialize EC domain parameters
- * @param[in] params Pointer to the EC domain parameters to be initialized
+ * @param[in] params Pointer to the EC domain parameters to initialize
  **/
 
 void ecInitDomainParameters(EcDomainParameters *params)
 {
    //Initialize structure
+   params->name = NULL;
    params->type = EC_CURVE_TYPE_NONE;
    params->mod = NULL;
 
@@ -149,6 +146,160 @@ end:
 
 
 /**
+ * @brief Initialize an EC public key
+ * @param[in] key Pointer to the EC public key to initialize
+ **/
+
+void ecInitPublicKey(EcPublicKey *key)
+{
+   //Initialize EC point
+   ecInit(&key->q);
+}
+
+
+/**
+ * @brief Release an EC public key
+ * @param[in] key Pointer to the EC public key to free
+ **/
+
+void ecFreePublicKey(EcPublicKey *key)
+{
+   //Free EC point
+   ecFree(&key->q);
+}
+
+
+/**
+ * @brief Initialize an EC private key
+ * @param[in] key Pointer to the EC private key to initialize
+ **/
+
+void ecInitPrivateKey(EcPrivateKey *key)
+{
+   //Initialize multiple precision integer
+   mpiInit(&key->d);
+
+   //Initialize private key slot
+   key->slot = -1;
+}
+
+
+/**
+ * @brief Release an EdDSA private key
+ * @param[in] key Pointer to the EC public key to free
+ **/
+
+void ecFreePrivateKey(EcPrivateKey *key)
+{
+   //Free multiple precision integer
+   mpiFree(&key->d);
+}
+
+
+/**
+ * @brief EC key pair generation
+ * @param[in] prngAlgo PRNG algorithm
+ * @param[in] prngContext Pointer to the PRNG context
+ * @param[in] params EC domain parameters
+ * @param[out] privateKey EC private key
+ * @param[out] publicKey EC public key
+ * @return Error code
+ **/
+
+__weak_func error_t ecGenerateKeyPair(const PrngAlgo *prngAlgo, void *prngContext,
+   const EcDomainParameters *params, EcPrivateKey *privateKey,
+   EcPublicKey *publicKey)
+{
+   error_t error;
+
+   //Generate a private key
+   error = ecGeneratePrivateKey(prngAlgo, prngContext, params, privateKey);
+
+   //Check status code
+   if(!error)
+   {
+      //Derive the public key from the private key
+      error = ecGeneratePublicKey(params, privateKey, publicKey);
+   }
+
+   //Return status code
+   return error;
+}
+
+
+/**
+ * @brief EC private key generation
+ * @param[in] prngAlgo PRNG algorithm
+ * @param[in] prngContext Pointer to the PRNG context
+ * @param[in] params EC domain parameters
+ * @param[out] privateKey EC private key
+ * @return Error code
+ **/
+
+error_t ecGeneratePrivateKey(const PrngAlgo *prngAlgo, void *prngContext,
+   const EcDomainParameters *params, EcPrivateKey *privateKey)
+{
+   error_t error;
+
+   //Check parameters
+   if(prngAlgo == NULL || prngContext == NULL || params == NULL ||
+      privateKey == NULL)
+   {
+      return ERROR_INVALID_PARAMETER;
+   }
+
+   //Generate a random number d such as 0 < d < q - 1
+   error = mpiRandRange(&privateKey->d, &params->q, prngAlgo, prngContext);
+
+   //Check status code
+   if(!error)
+   {
+      //Debug message
+      TRACE_DEBUG("  Private key:\r\n");
+      TRACE_DEBUG_MPI("    ", &privateKey->d);
+   }
+
+   //Return status code
+   return error;
+}
+
+
+/**
+ * @brief Derive the public key from an EC private key
+ * @param[in] params EC domain parameters
+ * @param[in] privateKey EC private key
+ * @param[out] publicKey EC public key
+ * @return Error code
+ **/
+
+error_t ecGeneratePublicKey(const EcDomainParameters *params,
+   const EcPrivateKey *privateKey, EcPublicKey *publicKey)
+{
+   error_t error;
+
+   //Check parameters
+   if(params == NULL || privateKey == NULL || publicKey == NULL)
+      return ERROR_INVALID_PARAMETER;
+
+   //Compute Q = d.G
+   EC_CHECK(ecMult(params, &publicKey->q, &privateKey->d, &params->g));
+
+   //Convert the public key to affine representation
+   EC_CHECK(ecAffinify(params, &publicKey->q, &publicKey->q));
+
+   //Debug message
+   TRACE_DEBUG("  Public key X:\r\n");
+   TRACE_DEBUG_MPI("    ", &publicKey->q.x);
+   TRACE_DEBUG("  Public key Y:\r\n");
+   TRACE_DEBUG_MPI("    ", &publicKey->q.y);
+
+end:
+   //Return status code
+   return error;
+}
+
+
+/**
  * @brief Initialize elliptic curve point
  * @param[in,out] r Pointer to the EC point to be initialized
  **/
@@ -227,10 +378,10 @@ error_t ecImport(const EcDomainParameters *params, EcPoint *r,
          return ERROR_ILLEGAL_PARAMETER;
 
       //Check the length of the octet string
-      if((params->type == EC_CURVE_TYPE_X25519 && length != CURVE25519_BYTE_LEN) ||
-         (params->type == EC_CURVE_TYPE_X448 && length != CURVE448_BYTE_LEN) ||
-         (params->type == EC_CURVE_TYPE_ED25519 && length != ED25519_PUBLIC_KEY_LEN) ||
-         (params->type == EC_CURVE_TYPE_ED448 && length != ED448_PUBLIC_KEY_LEN))
+      if((params->type == EC_CURVE_TYPE_X25519 && length != 32) ||
+         (params->type == EC_CURVE_TYPE_X448 && length != 56) ||
+         (params->type == EC_CURVE_TYPE_ED25519 && length != 32) ||
+         (params->type == EC_CURVE_TYPE_ED448 && length != 57))
       {
          return ERROR_ILLEGAL_PARAMETER;
       }
@@ -365,7 +516,7 @@ end:
  * @return Error code
  **/
 
-__weak error_t ecAffinify(const EcDomainParameters *params, EcPoint *r,
+__weak_func error_t ecAffinify(const EcDomainParameters *params, EcPoint *r,
    const EcPoint *s)
 {
    error_t error;
@@ -411,7 +562,7 @@ end:
  * @return TRUE if the affine point S is on the curve, else FALSE
  **/
 
-__weak bool_t ecIsPointAffine(const EcDomainParameters *params, const EcPoint *s)
+__weak_func bool_t ecIsPointAffine(const EcDomainParameters *params, const EcPoint *s)
 {
    error_t error;
    Mpi t1;
@@ -832,7 +983,7 @@ end:
  * @return Error code
  **/
 
-__weak error_t ecMult(const EcDomainParameters *params, EcPoint *r, const Mpi *d,
+__weak_func error_t ecMult(const EcDomainParameters *params, EcPoint *r, const Mpi *d,
    const EcPoint *s)
 {
    error_t error;
@@ -1209,7 +1360,7 @@ end:
  * @return Error code
  **/
 
-error_t ecMulMod(const EcDomainParameters *params, Mpi *r, const Mpi *a,
+__weak_func error_t ecMulMod(const EcDomainParameters *params, Mpi *r, const Mpi *a,
    const Mpi *b)
 {
    error_t error;
@@ -1241,7 +1392,7 @@ end:
  * @return Error code
  **/
 
-error_t ecSqrMod(const EcDomainParameters *params, Mpi *r, const Mpi *a)
+__weak_func error_t ecSqrMod(const EcDomainParameters *params, Mpi *r, const Mpi *a)
 {
    error_t error;
 

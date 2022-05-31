@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -33,7 +33,7 @@
  * Refer to SP 800-38D for more details
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -64,7 +64,7 @@
  * @return Error code
  **/
 
-error_t ccmEncrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
+__weak_func error_t ccmEncrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
    size_t nLen, const uint8_t *a, size_t aLen, const uint8_t *p, uint8_t *c,
    size_t length, uint8_t *t, size_t tLen)
 {
@@ -130,6 +130,7 @@ error_t ccmEncrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
       {
          //The length is encoded as 2 octets
          STORE16BE(aLen, b);
+
          //Number of bytes to copy
          m = MIN(aLen, 16 - 2);
          //Concatenate the associated data A
@@ -140,8 +141,10 @@ error_t ccmEncrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
          //The length is encoded as 6 octets
          b[0] = 0xFF;
          b[1] = 0xFE;
+
          //MSB is stored first
          STORE32BE(aLen, b + 2);
+
          //Number of bytes to copy
          m = MIN(aLen, 16 - 6);
          //Concatenate the associated data A
@@ -234,7 +237,7 @@ error_t ccmEncrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
  * @return Error code
  **/
 
-error_t ccmDecrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
+__weak_func error_t ccmDecrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
    size_t nLen, const uint8_t *a, size_t aLen, const uint8_t *c, uint8_t *p,
    size_t length, const uint8_t *t, size_t tLen)
 {
@@ -302,6 +305,7 @@ error_t ccmDecrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
       {
          //The length is encoded as 2 octets
          STORE16BE(aLen, b);
+
          //Number of bytes to copy
          m = MIN(aLen, 16 - 2);
          //Concatenate the associated data A
@@ -312,8 +316,10 @@ error_t ccmDecrypt(const CipherAlgo *cipher, void *context, const uint8_t *n,
          //The length is encoded as 6 octets
          b[0] = 0xFF;
          b[1] = 0xFE;
+
          //MSB is stored first
          STORE32BE(aLen, b + 2);
+
          //Number of bytes to copy
          m = MIN(aLen, 16 - 6);
          //Concatenate the associated data A
@@ -426,16 +432,16 @@ void ccmXorBlock(uint8_t *x, const uint8_t *a, const uint8_t *b, size_t n)
 void ccmIncCounter(uint8_t *x, size_t n)
 {
    size_t i;
+   uint16_t temp;
 
    //The function increments the right-most bytes of the block. The remaining
    //left-most bytes remain unchanged
-   for(i = 0; i < n; i++)
+   for(temp = 1, i = 0; i < n; i++)
    {
-      //Increment the current byte and propagate the carry if necessary
-      if(++(x[15 - i]) != 0)
-      {
-         break;
-      }
+      //Increment the current byte and propagate the carry
+      temp += x[15 - i];
+      x[15 - i] = temp & 0xFF;
+      temp >>= 8;
    }
 }
 

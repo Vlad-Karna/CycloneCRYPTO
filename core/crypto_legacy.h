@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _CRYPTO_LEGACY_H
@@ -41,6 +41,21 @@
 
 #ifdef CURVE448_SUPPORT
    #define X448_SUPPORT CURVE448_SUPPORT
+#endif
+
+#define ecdsaGenerateKeyPair ecGenerateKeyPair
+#define ecdsaGeneratePrivateKey ecGeneratePrivateKey
+#define ecdsaGeneratePublicKey ecGeneratePublicKey
+
+#define MAX_HASH_CONTEXT_SIZE sizeof(HashContext)
+#define MAX_CIPHER_CONTEXT_SIZE sizeof(CipherContext)
+
+#ifdef SAMD51_CRYPTO_PUKCC_SUPPORT
+   #define SAMD51_CRYPTO_PKC_SUPPORT SAMD51_CRYPTO_PUKCC_SUPPORT
+#endif
+
+#ifdef SAME54_CRYPTO_PUKCC_SUPPORT
+   #define SAME54_CRYPTO_PKC_SUPPORT SAME54_CRYPTO_PUKCC_SUPPORT
 #endif
 
 #endif

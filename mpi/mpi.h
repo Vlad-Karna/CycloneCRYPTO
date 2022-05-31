@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 #ifndef _MPI_H
@@ -97,6 +97,9 @@ error_t mpiSetValue(Mpi *a, int_t b);
 error_t mpiRand(Mpi *r, uint_t length, const PrngAlgo *prngAlgo,
    void *prngContext);
 
+error_t mpiRandRange(Mpi *r, const Mpi *p, const PrngAlgo *prngAlgo,
+   void *prngContext);
+
 error_t mpiCheckProbablePrime(const Mpi *a);
 
 error_t mpiImport(Mpi *r, const uint8_t *data, uint_t length, MpiFormat format);
@@ -125,7 +128,10 @@ error_t mpiAddMod(Mpi *r, const Mpi *a, const Mpi *b, const Mpi *p);
 error_t mpiSubMod(Mpi *r, const Mpi *a, const Mpi *b, const Mpi *p);
 error_t mpiMulMod(Mpi *r, const Mpi *a, const Mpi *b, const Mpi *p);
 error_t mpiInvMod(Mpi *r, const Mpi *a, const Mpi *p);
+
 error_t mpiExpMod(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p);
+error_t mpiExpModFast(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p);
+error_t mpiExpModRegular(Mpi *r, const Mpi *a, const Mpi *e, const Mpi *p);
 
 error_t mpiMontgomeryMul(Mpi *r, const Mpi *a, const Mpi *b, uint_t k,
    const Mpi *p, Mpi *t);

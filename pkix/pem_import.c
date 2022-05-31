@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -902,7 +902,7 @@ error_t pemImportEcParameters(const char_t *input, size_t length,
  **/
 
 error_t pemImportEcPublicKey(const char_t *input, size_t length,
-   EcPoint *publicKey)
+   EcPublicKey *publicKey)
 {
 #if (EC_SUPPORT == ENABLED)
    error_t error;
@@ -960,7 +960,7 @@ error_t pemImportEcPublicKey(const char_t *input, size_t length,
    if(error)
    {
       //Clean up side effects
-      ecFree(publicKey);
+      ecFreePublicKey(publicKey);
    }
 
    //Return status code
@@ -981,7 +981,7 @@ error_t pemImportEcPublicKey(const char_t *input, size_t length,
  **/
 
 error_t pemImportEcPrivateKey(const char_t *input, size_t length,
-   Mpi *privateKey)
+   EcPrivateKey *privateKey)
 {
 #if (EC_SUPPORT == ENABLED)
    error_t error;
@@ -1084,7 +1084,7 @@ error_t pemImportEcPrivateKey(const char_t *input, size_t length,
    if(error)
    {
       //Clean up side effects
-      mpiFree(privateKey);
+      ecFreePrivateKey(privateKey);
    }
 
    //Return status code

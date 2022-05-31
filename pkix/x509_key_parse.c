@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -36,9 +36,8 @@
 #include "pkix/x509_key_parse.h"
 #include "encoding/asn1.h"
 #include "encoding/oid.h"
+#include "ecc/eddsa.h"
 #include "hash/sha1.h"
-#include "ecc/ed25519.h"
-#include "ecc/ed448.h"
 #include "debug.h"
 
 //Check crypto library configuration
@@ -904,14 +903,14 @@ error_t x509ImportDsaPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
          publicKeyInfo->dsaPublicKey.y != NULL)
       {
          //Read parameter p
-         error = mpiImport(&publicKey->p, publicKeyInfo->dsaParams.p,
+         error = mpiImport(&publicKey->params.p, publicKeyInfo->dsaParams.p,
             publicKeyInfo->dsaParams.pLen, MPI_FORMAT_BIG_ENDIAN);
 
          //Check status code
          if(!error)
          {
             //Read parameter q
-            error = mpiImport(&publicKey->q, publicKeyInfo->dsaParams.q,
+            error = mpiImport(&publicKey->params.q, publicKeyInfo->dsaParams.q,
                publicKeyInfo->dsaParams.qLen, MPI_FORMAT_BIG_ENDIAN);
          }
 
@@ -919,7 +918,7 @@ error_t x509ImportDsaPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
          if(!error)
          {
             //Read parameter g
-            error = mpiImport(&publicKey->g, publicKeyInfo->dsaParams.g,
+            error = mpiImport(&publicKey->params.g, publicKeyInfo->dsaParams.g,
                publicKeyInfo->dsaParams.gLen, MPI_FORMAT_BIG_ENDIAN);
          }
 
@@ -937,11 +936,11 @@ error_t x509ImportDsaPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
             //Debug message
             TRACE_DEBUG("DSA public key:\r\n");
             TRACE_DEBUG("  Parameter p:\r\n");
-            TRACE_DEBUG_MPI("    ", &publicKey->p);
+            TRACE_DEBUG_MPI("    ", &publicKey->params.p);
             TRACE_DEBUG("  Parameter q:\r\n");
-            TRACE_DEBUG_MPI("    ", &publicKey->q);
+            TRACE_DEBUG_MPI("    ", &publicKey->params.q);
             TRACE_DEBUG("  Parameter g:\r\n");
-            TRACE_DEBUG_MPI("    ", &publicKey->g);
+            TRACE_DEBUG_MPI("    ", &publicKey->params.g);
             TRACE_DEBUG("  Public value y:\r\n");
             TRACE_DEBUG_MPI("    ", &publicKey->y);
          }
@@ -973,7 +972,7 @@ error_t x509ImportDsaPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
  **/
 
 error_t x509ImportEcPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
-   EcPoint *publicKey)
+   EcPublicKey *publicKey)
 {
    error_t error;
 
@@ -1012,7 +1011,7 @@ error_t x509ImportEcPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
          if(!error)
          {
             //Read the EC public key
-            error = ecImport(&params, publicKey, publicKeyInfo->ecPublicKey.q,
+            error = ecImport(&params, &publicKey->q, publicKeyInfo->ecPublicKey.q,
                publicKeyInfo->ecPublicKey.qLen);
          }
 
@@ -1021,9 +1020,9 @@ error_t x509ImportEcPublicKey(const X509SubjectPublicKeyInfo *publicKeyInfo,
          {
             //Debug message
             TRACE_DEBUG("  Public key X:\r\n");
-            TRACE_DEBUG_MPI("    ", &publicKey->x);
+            TRACE_DEBUG_MPI("    ", &publicKey->q.x);
             TRACE_DEBUG("  Public key Y:\r\n");
-            TRACE_DEBUG_MPI("    ", &publicKey->y);
+            TRACE_DEBUG_MPI("    ", &publicKey->q.y);
          }
 
          //Release EC domain parameters

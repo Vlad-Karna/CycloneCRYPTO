@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -529,7 +529,6 @@ error_t pemExportDsaPrivateKey(const DsaPrivateKey *privateKey,
    size_t length;
    uint8_t *p;
    Asn1Tag tag;
-   DsaDomainParameters params;
    X509SubjectPublicKeyInfo publicKeyInfo;
 
    //Check parameters
@@ -557,17 +556,13 @@ error_t pemExportDsaPrivateKey(const DsaPrivateKey *privateKey,
    if(output != NULL)
       p += n;
 
-   //Retrieve DSA domain parameters
-   params.p = privateKey->p;
-   params.q = privateKey->q;
-   params.g = privateKey->g;
-
    //The PrivateKeyAlgorithm identifies the private-key algorithm
    publicKeyInfo.oid = DSA_OID;
    publicKeyInfo.oidLen = sizeof(DSA_OID);
 
    //Format PrivateKeyAlgorithm field
-   error = x509FormatAlgorithmIdentifier(&publicKeyInfo, &params, p, &n);
+   error = x509FormatAlgorithmIdentifier(&publicKeyInfo, &privateKey->params,
+      p, &n);
    //Any error to report?
    if(error)
       return error;
@@ -683,7 +678,7 @@ error_t pemExportEcParameters(const EcCurveInfo *curveInfo,
  **/
 
 error_t pemExportEcPublicKey(const EcCurveInfo *curveInfo,
-   const EcPoint *publicKey, char_t *output, size_t *written)
+   const EcPublicKey *publicKey, char_t *output, size_t *written)
 {
 #if (EC_SUPPORT == ENABLED)
    error_t error;
@@ -740,8 +735,8 @@ error_t pemExportEcPublicKey(const EcCurveInfo *curveInfo,
  **/
 
 error_t pemExportEcPrivateKey(const EcCurveInfo *curveInfo,
-   const Mpi *privateKey, const EcPoint *publicKey, char_t *output,
-   size_t *written)
+   const EcPrivateKey *privateKey, const EcPublicKey *publicKey,
+   char_t *output, size_t *written)
 {
 #if (EC_SUPPORT == ENABLED)
    error_t error;
@@ -1037,7 +1032,7 @@ error_t pemEncodeFile(const void *input, size_t inputLen, const char_t *label,
       //the "-----BEGIN " line (refer to RFC 7468, section 2)
       osStrcpy(output, "-----BEGIN ");
       osStrcpy(output + 11, label);
-      osStrncpy(p - 7, "-----\r\n", 7);
+      osMemcpy(p - 7, "-----\r\n", 7);
 
       //Generators must put the same label on the "-----END " line as the
       //corresponding "-----BEGIN " line

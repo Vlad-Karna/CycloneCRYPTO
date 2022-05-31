@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -82,7 +82,7 @@ error_t chacha20Poly1305Encrypt(const uint8_t *k, size_t kLen,
    //and nonce
    chachaCipher(&chachaContext, NULL, temp, 32);
 
-   //The other 256 bits of the Chacha20 block are discarded
+   //The other 256 bits of the ChaCha20 block are discarded
    chachaCipher(&chachaContext, NULL, NULL, 32);
 
    //Next, the ChaCha20 encryption function is called to encrypt the
@@ -188,7 +188,7 @@ error_t chacha20Poly1305Decrypt(const uint8_t *k, size_t kLen,
    //and nonce
    chachaCipher(&chachaContext, NULL, temp, 32);
 
-   //The other 256 bits of the Chacha20 block are discarded
+   //The other 256 bits of the ChaCha20 block are discarded
    chachaCipher(&chachaContext, NULL, NULL, 32);
 
    //Initialize the Poly1305 function with the key calculated above

@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -36,9 +36,8 @@
 #include "pkix/x509_key_format.h"
 #include "encoding/asn1.h"
 #include "encoding/oid.h"
+#include "ecc/eddsa.h"
 #include "hash/sha1.h"
-#include "ecc/ed25519.h"
-#include "ecc/ed448.h"
 #include "debug.h"
 
 //Check crypto library configuration
@@ -79,15 +78,14 @@ error_t x509FormatSubjectPublicKeyInfo(const X509SubjectPublicKeyInfo *publicKey
    //Valid DSA public key?
    if(publicKey != NULL && !oidComp(oid, oidLen, DSA_OID, sizeof(DSA_OID)))
    {
-      DsaDomainParameters params;
+      const DsaPublicKey *dsaPublicKey;
 
-      //Retrieve DSA domain parameters
-      params.p = ((DsaPublicKey *) publicKey)->p;
-      params.q = ((DsaPublicKey *) publicKey)->q;
-      params.g = ((DsaPublicKey *) publicKey)->g;
+      //Point to the DSA public key
+      dsaPublicKey = (DsaPublicKey *) publicKey;
 
       //Format AlgorithmIdentifier field
-      error = x509FormatAlgorithmIdentifier(publicKeyInfo, &params, p, &n);
+      error = x509FormatAlgorithmIdentifier(publicKeyInfo,
+         &dsaPublicKey->params, p, &n);
    }
    else
 #endif

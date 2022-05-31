@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -32,7 +32,7 @@
  * with the first plaintext block. Refer to SP 800-38A for more details
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -58,7 +58,7 @@
  * @return Error code
  **/
 
-error_t cbcEncrypt(const CipherAlgo *cipher, void *context,
+__weak_func error_t cbcEncrypt(const CipherAlgo *cipher, void *context,
    uint8_t *iv, const uint8_t *p, uint8_t *c, size_t length)
 {
    size_t i;
@@ -72,8 +72,8 @@ error_t cbcEncrypt(const CipherAlgo *cipher, void *context,
          c[i] = p[i] ^ iv[i];
       }
 
-      //Encrypt the current block based upon the output
-      //of the previous encryption
+      //Encrypt the current block based upon the output of the previous
+      //encryption
       cipher->encryptBlock(context, c, c);
 
       //Update IV with output block contents
@@ -105,7 +105,7 @@ error_t cbcEncrypt(const CipherAlgo *cipher, void *context,
  * @return Error code
  **/
 
-error_t cbcDecrypt(const CipherAlgo *cipher, void *context,
+__weak_func error_t cbcDecrypt(const CipherAlgo *cipher, void *context,
    uint8_t *iv, const uint8_t *c, uint8_t *p, size_t length)
 {
    size_t i;

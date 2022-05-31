@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -42,8 +42,8 @@
 
 
 /**
- * @brief Initialize a DSA public key
- * @param[in] key Pointer to the DSA public key to initialize
+ * @brief Initialize an EdDSA public key
+ * @param[in] key Pointer to the EdDSA public key to initialize
  **/
 
 void eddsaInitPublicKey(EddsaPublicKey *key)
@@ -54,8 +54,8 @@ void eddsaInitPublicKey(EddsaPublicKey *key)
 
 
 /**
- * @brief Release a DSA public key
- * @param[in] key Pointer to the DSA public key to free
+ * @brief Release an EdDSA public key
+ * @param[in] key Pointer to the EdDSA public key to free
  **/
 
 void eddsaFreePublicKey(EddsaPublicKey *key)
@@ -66,8 +66,8 @@ void eddsaFreePublicKey(EddsaPublicKey *key)
 
 
 /**
- * @brief Initialize a DSA private key
- * @param[in] key Pointer to the DSA private key to initialize
+ * @brief Initialize an EdDSA private key
+ * @param[in] key Pointer to the EdDSA private key to initialize
  **/
 
 void eddsaInitPrivateKey(EddsaPrivateKey *key)
@@ -75,12 +75,15 @@ void eddsaInitPrivateKey(EddsaPrivateKey *key)
    //Initialize multiple precision integers
    mpiInit(&key->d);
    mpiInit(&key->q);
+
+   //Initialize private key slot
+   key->slot = -1;
 }
 
 
 /**
- * @brief Release a DSA private key
- * @param[in] key Pointer to the DSA public key to free
+ * @brief Release an EdDSA private key
+ * @param[in] key Pointer to the EdDSA public key to free
  **/
 
 void eddsaFreePrivateKey(EddsaPrivateKey *key)

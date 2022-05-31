@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -32,7 +32,7 @@
  * produce the ciphertext, and vice versa. Refer to SP 800-38A for more details
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -59,19 +59,20 @@
  * @return Error code
  **/
 
-error_t ctrEncrypt(const CipherAlgo *cipher, void *context, uint_t m,
+__weak_func error_t ctrEncrypt(const CipherAlgo *cipher, void *context, uint_t m,
    uint8_t *t, const uint8_t *p, uint8_t *c, size_t length)
 {
    size_t i;
    size_t n;
+   uint16_t temp;
    uint8_t o[16];
 
    //The parameter must be a multiple of 8
    if((m % 8) != 0)
       return ERROR_INVALID_PARAMETER;
 
-   //Determine the size, in bytes, of the specific part of
-   //the block to be incremented
+   //Determine the size, in bytes, of the specific part of the block
+   //to be incremented
    m = m / 8;
 
    //Check the resulting value
@@ -94,11 +95,12 @@ error_t ctrEncrypt(const CipherAlgo *cipher, void *context, uint_t m,
       }
 
       //Standard incrementing function
-      for(i = 0; i < m; i++)
+      for(temp = 1, i = 1; i <= m; i++)
       {
-         //Increment the current byte and propagate the carry if necessary
-         if(++(t[cipher->blockSize - 1 - i]) != 0)
-            break;
+         //Increment the current byte and propagate the carry
+         temp += t[cipher->blockSize - i];
+         t[cipher->blockSize - i] = temp & 0xFF;
+         temp >>= 8;
       }
 
       //Next block
@@ -127,53 +129,8 @@ error_t ctrEncrypt(const CipherAlgo *cipher, void *context, uint_t m,
 error_t ctrDecrypt(const CipherAlgo *cipher, void *context, uint_t m,
    uint8_t *t, const uint8_t *c, uint8_t *p, size_t length)
 {
-   size_t i;
-   size_t n;
-   uint8_t o[16];
-
-   //The parameter must be a multiple of 8
-   if((m % 8) != 0)
-      return ERROR_INVALID_PARAMETER;
-
-   //Determine the size, in bytes, of the specific part of
-   //the block to be incremented
-   m = m / 8;
-
-   //Check the resulting value
-   if(m > cipher->blockSize)
-      return ERROR_INVALID_PARAMETER;
-
-   //Process ciphertext
-   while(length > 0)
-   {
-      //CTR mode operates in a block-by-block fashion
-      n = MIN(length, cipher->blockSize);
-
-      //Compute O(j) = CIPH(T(j))
-      cipher->encryptBlock(context, t, o);
-
-      //Compute P(j) = C(j) XOR T(j)
-      for(i = 0; i < n; i++)
-      {
-         p[i] = c[i] ^ o[i];
-      }
-
-      //Standard incrementing function
-      for(i = 0; i < m; i++)
-      {
-         //Increment the current byte and propagate the carry if necessary
-         if(++(t[cipher->blockSize - 1 - i]) != 0)
-            break;
-      }
-
-      //Next block
-      c += n;
-      p += n;
-      length -= n;
-   }
-
-   //Successful encryption
-   return NO_ERROR;
+   //Decryption is the same the as encryption with P and C interchanged
+   return ctrEncrypt(cipher, context, m, t, c, p, length);
 }
 
 #endif

@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Copyright (C) 2010-2021 Oryx Embedded SARL. All rights reserved.
+ * Copyright (C) 2010-2022 Oryx Embedded SARL. All rights reserved.
  *
  * This file is part of CycloneCRYPTO Open.
  *
@@ -25,7 +25,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * @author Oryx Embedded SARL (www.oryx-embedded.com)
- * @version 2.0.4
+ * @version 2.1.6
  **/
 
 //Switch to the appropriate trace level
@@ -36,29 +36,8 @@
 #include "pkix/x509_common.h"
 #include "encoding/asn1.h"
 #include "encoding/oid.h"
-#include "pkc/rsa.h"
-#include "pkc/dsa.h"
-#include "hash/md5.h"
-#include "hash/sha1.h"
-#include "hash/sha224.h"
-#include "hash/sha256.h"
-#include "hash/sha384.h"
-#include "hash/sha512.h"
+#include "hash/hash_algorithms.h"
 #include "debug.h"
-
-//SHA-3 dependencies
-#if (X509_SHA3_224_SUPPORT == ENABLED && SHA3_224_SUPPORT == ENABLED)
-   #include "hash/sha3_224.h"
-#endif
-#if (X509_SHA3_256_SUPPORT == ENABLED && SHA3_256_SUPPORT == ENABLED)
-   #include "hash/sha3_256.h"
-#endif
-#if (X509_SHA3_384_SUPPORT == ENABLED && SHA3_384_SUPPORT == ENABLED)
-   #include "hash/sha3_384.h"
-#endif
-#if (X509_SHA3_512_SUPPORT == ENABLED && SHA3_512_SUPPORT == ENABLED)
-   #include "hash/sha3_512.h"
-#endif
 
 //Check crypto library configuration
 #if (X509_SUPPORT == ENABLED)
@@ -154,6 +133,10 @@ const uint8_t X509_KP_EMAIL_PROTECTION_OID[8] = {0x2B, 0x06, 0x01, 0x05, 0x05, 0
 const uint8_t X509_KP_TIME_STAMPING_OID[8] = {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x08};
 //Key Purpose OCSP Signing OID (1.3.6.1.5.5.7.3.9)
 const uint8_t X509_KP_OCSP_SIGNING_OID[8] = {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x09};
+//Key Purpose Secure Shell Client (1.3.6.1.5.5.7.3.21)
+const uint8_t X509_KP_SSH_CLIENT_OID[8] = {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x15};
+//Key Purpose Secure Shell Client (1.3.6.1.5.5.7.3.22)
+const uint8_t X509_KP_SSH_SERVER_OID[8] = {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x16};
 
 //PKCS#9 Challenge Password OID (1.2.840.113549.1.9.7)
 const uint8_t X509_CHALLENGE_PASSWORD_OID[9] = {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x09, 0x07};
