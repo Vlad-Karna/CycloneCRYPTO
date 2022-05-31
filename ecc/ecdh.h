@@ -71,6 +71,8 @@ void ecdhFree(EcdhContext *context);
 error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
    void *prngContext);
 
+error_t ecdhGeneratePublicKey(EcdhContext *context);
+
 error_t ecdhCheckPublicKey(const EcDomainParameters *params, EcPoint *publicKey);
 
 error_t ecdhComputeSharedSecret(EcdhContext *context,

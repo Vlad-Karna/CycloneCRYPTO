@@ -218,6 +218,131 @@ error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
 
 
 /**
+ * @brief ECDH public key generation
+ * @param[in] context Pointer to the ECDH context
+ * @return Error code
+ **/
+
+error_t ecdhGeneratePublicKey(EcdhContext *context)
+{
+   error_t error;
+
+   //Debug message
+   TRACE_DEBUG("Generating ECDH Public key ...\r\n");
+
+   //Weierstrass elliptic curve?
+   if(context->params.type == EC_CURVE_TYPE_SECT_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R2 ||
+      context->params.type == EC_CURVE_TYPE_SECP_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R2 ||
+      context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
+   {
+      //Generate an EC key pair
+      error = ecGeneratePublicKey(&context->params, &context->da,
+         &context->qa);
+   }
+#if (X25519_SUPPORT == ENABLED)
+   //Curve25519 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X25519)
+   {
+      uint8_t da[CURVE25519_BYTE_LEN];
+      uint8_t qa[CURVE25519_BYTE_LEN];
+      uint8_t g[CURVE25519_BYTE_LEN];
+
+      //Get private key
+      error = mpiExport(&context->da.d, da, CURVE25519_BYTE_LEN,
+         MPI_FORMAT_LITTLE_ENDIAN);
+
+      //Check status code
+      if(!error)
+      {
+         //Debug message
+         TRACE_DEBUG("  Private key:\r\n");
+         TRACE_DEBUG_ARRAY("    ", da, CURVE25519_BYTE_LEN);
+
+         //Get the u-coordinate of the base point
+         error = mpiExport(&context->params.g.x, g, CURVE25519_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         //Generate the public value using X25519 function
+         error = x25519(qa, da, g);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         //Debug message
+         TRACE_DEBUG("  Public key:\r\n");
+         TRACE_DEBUG_ARRAY("    ", qa, CURVE25519_BYTE_LEN);
+
+         //Save public key
+         error = mpiImport(&context->qa.q.x, qa, CURVE25519_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+   }
+#endif
+#if (X448_SUPPORT == ENABLED)
+   //Curve448 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X448)
+   {
+      uint8_t da[CURVE448_BYTE_LEN];
+      uint8_t qa[CURVE448_BYTE_LEN];
+      uint8_t g[CURVE448_BYTE_LEN];
+
+      //Get private key
+      error = mpiExport(&context->da.d, da, CURVE448_BYTE_LEN,
+         MPI_FORMAT_LITTLE_ENDIAN);
+
+      //Check status code
+      if(!error)
+      {
+         //Debug message
+         TRACE_DEBUG("  Private key:\r\n");
+         TRACE_DEBUG_ARRAY("    ", da, CURVE448_BYTE_LEN);
+
+         //Get the u-coordinate of the base point
+         error = mpiExport(&context->params.g.x, g, CURVE448_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         //Generate the public value using X448 function
+         error = x448(qa, da, g);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         //Debug message
+         TRACE_DEBUG("  Public key:\r\n");
+         TRACE_DEBUG_ARRAY("    ", qa, CURVE448_BYTE_LEN);
+
+         //Save public key
+         error = mpiImport(&context->qa.q.x, qa, CURVE448_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+   }
+#endif
+   //Invalid elliptic curve?
+   else
+   {
+      //Report an error
+      error = ERROR_INVALID_TYPE;
+   }
+
+   //Return status code
+   return error;
+}
+
+/**
  * @brief Check ECDH public key
  * @param[in] params EC domain parameters
  * @param[in] publicKey Public key to be checked
