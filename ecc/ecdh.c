@@ -408,7 +408,7 @@ error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size
       //Check status code
       if(!error)
       {
-         *used = mpiGetByteLength(&context->da.d);
+         *used_size = mpiGetByteLength(&context->da.d);
       }
    }
 #if (X25519_SUPPORT == ENABLED)
@@ -429,7 +429,7 @@ error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size
       //Check status code
       if(!error)
       {
-         *used = CURVE25519_BYTE_LEN;
+         *used_size = CURVE25519_BYTE_LEN;
       }
    }
 #endif
@@ -451,7 +451,7 @@ error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size
       //Check status code
       if(!error)
       {
-         *used = CURVE448_BYTE_LEN;
+         *used_size = CURVE448_BYTE_LEN;
       }
    }
 #endif
@@ -493,7 +493,7 @@ error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size,
       context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
    {
       //Export an EC Public key
-      error = ecExport(&context->params, &context->qa.q, buf, used);
+      error = ecExport(&context->params, &context->qa.q, buf, used_size);
    }
 #if (X25519_SUPPORT == ENABLED)
    //Curve25519 elliptic curve?
@@ -506,13 +506,7 @@ error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size,
       if(!error)
       {
          //Get Public key
-         error = ecExport(&context->params, &context->qa.q, buf, used);
-      }
-
-      //Check status code
-      if(!error)
-      {
-         *used = CURVE25519_BYTE_LEN;
+         error = ecExport(&context->params, &context->qa.q, buf, used_size);
       }
    }
 #endif
@@ -527,13 +521,7 @@ error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size,
       if(!error)
       {
          //Get Public key
-         error = ecExport(&context->params, &context->qa.q, buf, used);
-      }
-
-      //Check status code
-      if(!error)
-      {
-         *used = CURVE448_BYTE_LEN;
+         error = ecExport(&context->params, &context->qa.q, buf, used_size);
       }
    }
 #endif
