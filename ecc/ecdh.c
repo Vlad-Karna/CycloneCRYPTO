@@ -228,7 +228,7 @@ error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
 error_t ecdhImportPrivateKey(EcdhContext *context, const uint8_t *key,
    size_t key_size)
 {
-   error_t error;
+   error_t error = NO_ERROR;
 
    //Debug message
    TRACE_DEBUG("Importing ECDH private key...\r\n");
@@ -387,7 +387,7 @@ error_t ecdhImportPrivateKey(EcdhContext *context, const uint8_t *key,
 
 error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size, size_t *used_size)
 {
-   error_t error;
+   error_t error = NO_ERROR;
 
    //Debug message
    TRACE_DEBUG("Exporting ECDH Private key ...\r\n");
@@ -478,7 +478,7 @@ error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size
 
 error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size, size_t *used_size)
 {
-   error_t error;
+   error_t error = NO_ERROR;
 
    //Debug message
    TRACE_DEBUG("Exporting ECDH Public key ...\r\n");
