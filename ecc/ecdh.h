@@ -80,6 +80,9 @@ error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf,
 error_t ecdhExportPublicKey (EcdhContext *context, uint8_t *buf,
    size_t buf_size, size_t *used_size);
 
+error_t ecdhImportPeerPublicKey(EcdhContext *context, const uint8_t *buf,
+   size_t buf_size);
+
 error_t ecdhCheckPublicKey(const EcDomainParameters *params, EcPoint *publicKey);
 
 error_t ecdhComputeSharedSecret(EcdhContext *context,

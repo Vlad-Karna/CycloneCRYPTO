@@ -537,6 +537,77 @@ error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size,
 }
 
 /**
+ * @brief ECDH import Peer's Public key
+ * @param[in] context Pointer to the ECDH context
+ *
+ *
+ *
+ * @return Error code
+ **/
+
+error_t ecdhImportPeerPublicKey(EcdhContext *context, const uint8_t *buf,
+   size_t buf_size)
+{
+   error_t error;
+
+   //Debug message
+   TRACE_DEBUG("Importing ECDH Peer's Public key ...\r\n");
+
+   //Weierstrass elliptic curve?
+   if(context->params.type == EC_CURVE_TYPE_SECT_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R2 ||
+      context->params.type == EC_CURVE_TYPE_SECP_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R2 ||
+      context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
+   {
+      //Import an EC Public key
+      error = ecImport(&context->params, &context->qb.q, buf, buf_size);
+   }
+#if (X25519_SUPPORT == ENABLED)
+   //Curve25519 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X25519)
+   {
+      //Check buf_size
+      if (buf_size < CURVE25519_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get Public key
+         error = ecImport(&context->params, &context->qb.q, buf, CURVE25519_BYTE_LEN);
+      }
+   }
+#endif
+#if (X448_SUPPORT == ENABLED)
+   //Curve448 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X448)
+   {
+      //Check buf_size
+      if (buf_size < CURVE448_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get Public key
+         error = ecImport(&context->params, &context->qb.q, buf, CURVE448_BYTE_LEN);
+      }
+   }
+#endif
+   //Invalid elliptic curve?
+   else
+   {
+      //Report an error
+      error = ERROR_INVALID_TYPE;
+   }
+
+   //Return status code
+   return error;
+}
+
+
+/**
  * @brief Check ECDH public key
  * @param[in] params EC domain parameters
  * @param[in] publicKey Public key to be checked
