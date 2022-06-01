@@ -71,7 +71,14 @@ void ecdhFree(EcdhContext *context);
 error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
    void *prngContext);
 
-error_t ecdhGeneratePublicKey(EcdhContext *context);
+error_t ecdhImportPrivateKey(EcdhContext *context, const uint8_t *key,
+   size_t key_size);
+
+error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf,
+   size_t buf_size, size_t *used_size);
+
+error_t ecdhExportPublicKey (EcdhContext *context, uint8_t *buf,
+   size_t buf_size, size_t *used_size);
 
 error_t ecdhCheckPublicKey(const EcDomainParameters *params, EcPoint *publicKey);
 

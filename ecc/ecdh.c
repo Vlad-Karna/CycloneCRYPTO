@@ -218,17 +218,20 @@ error_t ecdhGenerateKeyPair(EcdhContext *context, const PrngAlgo *prngAlgo,
 
 
 /**
- * @brief ECDH public key generation
+ * @brief ECDH key pair generation
  * @param[in] context Pointer to the ECDH context
+ * @param[in] key Private key
+ * @param[in] key_size Private key size in bytes
  * @return Error code
  **/
 
-error_t ecdhGeneratePublicKey(EcdhContext *context)
+error_t ecdhImportPrivateKey(EcdhContext *context, const uint8_t *key,
+   size_t key_size)
 {
    error_t error;
 
    //Debug message
-   TRACE_DEBUG("Generating ECDH Public key ...\r\n");
+   TRACE_DEBUG("Importing ECDH private key...\r\n");
 
    //Weierstrass elliptic curve?
    if(context->params.type == EC_CURVE_TYPE_SECT_K1 ||
@@ -239,9 +242,17 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
       context->params.type == EC_CURVE_TYPE_SECP_R2 ||
       context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
    {
-      //Generate an EC key pair
-      error = ecGeneratePublicKey(&context->params, &context->da,
-         &context->qa);
+      //Import EC private key
+      error = mpiImport(&context->da.d, key, key_size,
+         MPI_FORMAT_BIG_ENDIAN);
+
+      //Check status code
+      if(!error)
+      {
+         //Derive the public key from the private key
+         error = ecGeneratePublicKey(context->params, &context->da.d,
+            &context->qa.q);
+      }
    }
 #if (X25519_SUPPORT == ENABLED)
    //Curve25519 elliptic curve?
@@ -251,9 +262,9 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
       uint8_t qa[CURVE25519_BYTE_LEN];
       uint8_t g[CURVE25519_BYTE_LEN];
 
-      //Get private key
-      error = mpiExport(&context->da.d, da, CURVE25519_BYTE_LEN,
-         MPI_FORMAT_LITTLE_ENDIAN);
+      //Read 32 bytes
+      if (key_size < CURVE25519_BYTE_LEN) error = ERROR_INVALID_KEY_LENGTH;
+      else memcpy(da, key, CURVE25519_BYTE_LEN);
 
       //Check status code
       if(!error)
@@ -277,6 +288,14 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
       //Check status code
       if(!error)
       {
+         //Save private key
+         error = mpiImport(&context->da.d, da, CURVE25519_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
          //Debug message
          TRACE_DEBUG("  Public key:\r\n");
          TRACE_DEBUG_ARRAY("    ", qa, CURVE25519_BYTE_LEN);
@@ -285,6 +304,9 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
          error = mpiImport(&context->qa.q.x, qa, CURVE25519_BYTE_LEN,
             MPI_FORMAT_LITTLE_ENDIAN);
       }
+
+      //Cleanup
+      memset(da, 0, sizeof(da));
    }
 #endif
 #if (X448_SUPPORT == ENABLED)
@@ -295,9 +317,9 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
       uint8_t qa[CURVE448_BYTE_LEN];
       uint8_t g[CURVE448_BYTE_LEN];
 
-      //Get private key
-      error = mpiExport(&context->da.d, da, CURVE448_BYTE_LEN,
-         MPI_FORMAT_LITTLE_ENDIAN);
+      //Read 56 bytes
+      if (key_size < CURVE448_BYTE_LEN) error = ERROR_INVALID_KEY_LENGTH;
+      else memcpy(da, key, CURVE448_BYTE_LEN);
 
       //Check status code
       if(!error)
@@ -321,6 +343,14 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
       //Check status code
       if(!error)
       {
+         //Save private key
+         error = mpiImport(&context->da.d, da, CURVE448_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
          //Debug message
          TRACE_DEBUG("  Public key:\r\n");
          TRACE_DEBUG_ARRAY("    ", qa, CURVE448_BYTE_LEN);
@@ -328,6 +358,182 @@ error_t ecdhGeneratePublicKey(EcdhContext *context)
          //Save public key
          error = mpiImport(&context->qa.q.x, qa, CURVE448_BYTE_LEN,
             MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Cleanup
+      memset(da, 0, sizeof(da));
+   }
+#endif
+   //Invalid elliptic curve?
+   else
+   {
+      //Report an error
+      error = ERROR_INVALID_TYPE;
+   }
+
+   //Return status code
+   return error;
+}
+
+
+/**
+ * @brief ECDH export Private key
+ * @param[in] context Pointer to the ECDH context
+ *
+ *
+ *
+ * @return Error code
+ **/
+
+error_t ecdhExportPrivateKey(EcdhContext *context, uint8_t *buf, size_t buf_size, size_t *used_size)
+{
+   error_t error;
+
+   //Debug message
+   TRACE_DEBUG("Exporting ECDH Private key ...\r\n");
+
+   //Weierstrass elliptic curve?
+   if(context->params.type == EC_CURVE_TYPE_SECT_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R2 ||
+      context->params.type == EC_CURVE_TYPE_SECP_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R2 ||
+      context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
+   {
+      //Export an EC Private key
+      error = mpiExport(&context->da.d, buf, buf_size,
+         MPI_FORMAT_BIG_ENDIAN);
+
+      //Check status code
+      if(!error)
+      {
+         *used = mpiGetByteLength(&context->da.d);
+      }
+   }
+#if (X25519_SUPPORT == ENABLED)
+   //Curve25519 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X25519)
+   {
+      //Check buf_size
+      if (buf_size < CURVE25519_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get private key
+         error = mpiExport(&context->da.d, buf, CURVE25519_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         *used = CURVE25519_BYTE_LEN;
+      }
+   }
+#endif
+#if (X448_SUPPORT == ENABLED)
+   //Curve448 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X448)
+   {
+      //Check buf_size
+      if (buf_size < CURVE448_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get private key
+         error = mpiExport(&context->da.d, buf, CURVE448_BYTE_LEN,
+            MPI_FORMAT_LITTLE_ENDIAN);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         *used = CURVE448_BYTE_LEN;
+      }
+   }
+#endif
+   //Invalid elliptic curve?
+   else
+   {
+      //Report an error
+      error = ERROR_INVALID_TYPE;
+   }
+
+   //Return status code
+   return error;
+}
+
+
+/**
+ * @brief ECDH export Public key
+ * @param[in] context Pointer to the ECDH context
+ *
+ *
+ *
+ * @return Error code
+ **/
+
+error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size, size_t *used_size)
+{
+   error_t error;
+
+   //Debug message
+   TRACE_DEBUG("Exporting ECDH Public key ...\r\n");
+
+   //Weierstrass elliptic curve?
+   if(context->params.type == EC_CURVE_TYPE_SECT_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECT_R2 ||
+      context->params.type == EC_CURVE_TYPE_SECP_K1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R1 ||
+      context->params.type == EC_CURVE_TYPE_SECP_R2 ||
+      context->params.type == EC_CURVE_TYPE_BRAINPOOLP_R1)
+   {
+      //Export an EC Public key
+      error = ecExport(&context->params, &context->qa.q, buf, used);
+   }
+#if (X25519_SUPPORT == ENABLED)
+   //Curve25519 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X25519)
+   {
+      //Check buf_size
+      if (buf_size < CURVE25519_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get Public key
+         error = ecExport(&context->params, &context->qa.q, buf, used);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         *used = CURVE25519_BYTE_LEN;
+      }
+   }
+#endif
+#if (X448_SUPPORT == ENABLED)
+   //Curve448 elliptic curve?
+   else if(context->params.type == EC_CURVE_TYPE_X448)
+   {
+      //Check buf_size
+      if (buf_size < CURVE448_BYTE_LEN) error = ERROR_INVALID_LENGTH;
+
+      //Check status code
+      if(!error)
+      {
+         //Get Public key
+         error = ecExport(&context->params, &context->qa.q, buf, used);
+      }
+
+      //Check status code
+      if(!error)
+      {
+         *used = CURVE448_BYTE_LEN;
       }
    }
 #endif
