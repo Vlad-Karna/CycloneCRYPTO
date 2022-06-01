@@ -548,7 +548,7 @@ error_t ecdhExportPublicKey(EcdhContext *context, uint8_t *buf, size_t buf_size,
 error_t ecdhImportPeerPublicKey(EcdhContext *context, const uint8_t *buf,
    size_t buf_size)
 {
-   error_t error;
+   error_t error = NO_ERROR;
 
    //Debug message
    TRACE_DEBUG("Importing ECDH Peer's Public key ...\r\n");
