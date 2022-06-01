@@ -250,8 +250,8 @@ error_t ecdhImportPrivateKey(EcdhContext *context, const uint8_t *key,
       if(!error)
       {
          //Derive the public key from the private key
-         error = ecGeneratePublicKey(&context->params, &context->da.d,
-            &context->qa.q);
+         error = ecGeneratePublicKey(&context->params, &context->da,
+            &context->qa);
       }
    }
 #if (X25519_SUPPORT == ENABLED)
